@@ -1,0 +1,50 @@
+#pragma once
+#include "person.hpp"
+#include "student.hpp"
+#include "instructor.hpp"
+#include "csv.hpp"
+#include <vector>
+#include <string>
+
+inline std::string writeAllPeopleCsv(const std::vector<Person*>& people) {
+    std::string out = "role,id,name,email,grad_year,office,courses,teaches\n";
+
+    for (int i = 0; i < (int)people.size(); i++) {
+        Person* p = people[i];
+        std::string role = p->role();
+        std::string id = std::to_string(p->id());
+        std::string name = p->name();
+        std::string email = p->email();
+        std::string gradYear = "";
+        std::string office = "";
+        std::string courses = "";
+        std::string teaches = "";
+
+        Student* s = dynamic_cast<Student*>(p);
+        Instructor* ins = dynamic_cast<Instructor*>(p);
+
+        if (s != nullptr) {
+            nlohmann::json j = s->to_json();
+            gradYear = std::to_string(j.at("grad_year").get<int>());
+            std::vector<std::string> c = j.at("courses").get<std::vector<std::string>>();
+            for (int k = 0; k < (int)c.size(); k++) {
+                if (k > 0) courses += ";";
+                courses += c[k];
+            }
+        }
+
+        if (ins != nullptr) {
+            nlohmann::json j = ins->to_json();
+            office = j.at("office").get<std::string>();
+            std::vector<std::string> t = j.at("teaches").get<std::vector<std::string>>();
+            for (int k = 0; k < (int)t.size(); k++) {
+                if (k > 0) teaches += ";";
+                teaches += t[k];
+            }
+        }
+
+        out += csv_escape(role) + "," + id + "," + csv_escape(name) + "," + csv_escape(email) + "," + gradYear + "," + csv_escape(office) + "," + csv_escape(courses) + "," + csv_escape(teaches) + "\n";
+    }
+
+    return out;
+}
